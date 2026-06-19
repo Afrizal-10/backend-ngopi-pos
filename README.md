@@ -29,3 +29,7 @@ Backend API untuk aplikasi Point of Sale (POS) **Ngopi POS** yang dibangun mengg
 - Morgan
 - Dotenv
 - Nodemon
+
+## Keterangan Project
+
+Project ini dibuat untuk kebutuhan pembelajaran dan pengembangan portofolio.
