@@ -76,6 +76,34 @@ exports.updateKasir = async (req, res) => {
   }
 };
 
+// update my profile
+exports.updateMyProfile = async (req, res) => {
+  try {
+    const {name, email} = req.body;
+
+    // Cek email duplikat
+    if (email && email !== req.user.email) {
+      const exists = await User.findOne({email});
+      if (exists) {
+        return res.status(400).json({message: "Email sudah digunakan"});
+      }
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.user._id,
+      {name, email},
+      {new: true},
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: "Profil berhasil diupdate",
+    });
+  } catch (error) {
+    res.status(500).json({message: error.message});
+  }
+};
 // delete kasir
 exports.deleteKasir = async (req, res) => {
   try {

@@ -9,9 +9,11 @@ const {
   deleteKasir,
   getTotalKasir,
   getMyProfile,
+  updateMyProfile,
 } = require("../controller/kasirController");
 
 router.get("/me", protect, getMyProfile);
+router.put("/me", protect, updateMyProfile);
 
 // Semua route hanya untuk admin
 router.use(protect, role("admin"));

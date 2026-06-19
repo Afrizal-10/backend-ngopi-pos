@@ -5,9 +5,11 @@ const Transaction = require("../model/Transaction");
 // Get all product (admin & kasir)
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find({isAvailable: true}).sort({
-      createdAt: -1,
-    });
+    const products = await Product.find({isAvailable: true})
+      .populate("category", "name")
+      .sort({
+        createdAt: -1,
+      });
 
     res.json(products);
   } catch (error) {
@@ -106,6 +108,7 @@ exports.updateProduct = async (req, res) => {
 };
 
 // Delete product (soft delete)
+// Delete product (soft delete)
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -115,7 +118,9 @@ exports.deleteProduct = async (req, res) => {
     }
 
     product.isAvailable = false;
-    await product.save();
+
+    // tambahin ini
+    await product.save({validateBeforeSave: false});
 
     res.json({message: "Delete product successfully"});
   } catch (error) {

@@ -14,7 +14,7 @@ exports.createTransaction = async (req, res) => {
   try {
     // ambil data dari request
     const {
-      items,
+      items, // detail transaksi (produk yang dibeli)
       paymentMethod,
       paidAmount,
       taxPercent = 11,
@@ -170,6 +170,35 @@ exports.getTransactions = async (req, res) => {
   }
 };
 
+// Get payment method (kasir)
+exports.getPaymentMethodStats = async (req, res) => {
+  try {
+    const data = await Transaction.aggregate([
+      {
+        $match: {
+          status: "paid",
+          cashier: req.user._id,
+        },
+      },
+      {
+        $group: {
+          _id: "$paymentMethod",
+          count: {$sum: 1},
+        },
+      },
+    ]);
+
+    const result = {};
+    data.forEach((item) => {
+      result[item._id] = item.count;
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({message: err.message});
+  }
+};
+
 // get transaction detail (by invoice)
 exports.getTransactionDetail = async (req, res) => {
   try {
@@ -187,8 +216,21 @@ exports.getTransactionDetail = async (req, res) => {
   }
 };
 
-// cancel transaction
-exports.cancelTransaction = async (req, res) => {
+// Get all kasir
+exports.getKasirTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.find({
+      cashier: req.user._id,
+    }).sort({createdAt: -1});
+
+    res.json(transactions);
+  } catch (error) {
+    res.status(500).json({message: error.message});
+  }
+};
+
+// Cancel (kasir)
+exports.cancelTransactionKasir = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
 
@@ -196,8 +238,13 @@ exports.cancelTransaction = async (req, res) => {
       return res.status(404).json({message: "Transaction not found"});
     }
 
-    if (transaction.status === "cancelled") {
-      return res.status(400).json({message: "Already cancelled"});
+    // hanya milik kasir sendiri
+    if (transaction.cashier.toString() !== req.user._id.toString()) {
+      return res.status(403).json({message: "Not your transaction"});
+    }
+
+    if (transaction.status !== "paid") {
+      return res.status(400).json({message: "Cannot cancel"});
     }
 
     transaction.status = "cancelled";
@@ -210,7 +257,7 @@ exports.cancelTransaction = async (req, res) => {
       });
     }
 
-    res.json({message: "Transaction cancelled"});
+    res.json({message: "Cancelled successfully"});
   } catch (error) {
     res.status(500).json({message: error.message});
   }

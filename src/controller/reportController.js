@@ -3,53 +3,64 @@ const Transaction = require("../model/Transaction");
 // sales report, mengambil laporan penjualan berdasarkan range waktu hari, minggu, bulan, tahun
 exports.getSalesReport = async (req, res) => {
   try {
-    // ambil range dari query
     const {range = "day"} = req.query;
-    // set tanggal awal (mulai dari jam 00.00 hari ini)
+
     let startDate = new Date();
+    let endDate = new Date();
+
+    // set end ke akhir hari ini
+    endDate.setHours(23, 59, 59, 999);
+
+    // set start awal hari
     startDate.setHours(0, 0, 0, 0);
 
-    // tentukan range waktu
     switch (range) {
       case "week":
-        startDate.setDate(startDate.getDate() - 7);
+        startDate.setDate(startDate.getDate() - 6); // 7 hari termasuk hari ini
         break;
+
       case "month":
-        startDate.setMonth(startDate.getMonth() - 1);
+        startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
         break;
+
       case "year":
-        startDate.setFullYear(startDate.getFullYear() - 1);
+        startDate = new Date(startDate.getFullYear(), 0, 1);
         break;
+
       default:
         break;
     }
 
-    // ambil transaksi dengan status paid
-    const transactions = await Transaction.find({
-      createdAt: {$gte: startDate},
+    let filter = {
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate,
+      },
       status: "paid",
-    })
+    };
+
+    // kalau kasir hanya lihat transaksi sendiri
+    if (req.user.role === "kasir") {
+      filter.cashier = req.user._id;
+    }
+
+    const transactions = await Transaction.find(filter)
       .populate("cashier", "name")
       .sort({createdAt: -1});
 
-    // Hitung ringkasan laporan penjualan
     const summary = {
-      omzet: transactions.reduce((total, transaction) => {
-        return total + transaction.grandTotal;
-      }, 0),
-      tax: transactions.reduce((total, transaction) => {
-        return total + (transaction.taxAmount || 0);
-      }, 0),
-      discount: transactions.reduce((total, transaction) => {
-        return total + (transaction.discountAmount || 0);
-      }, 0),
-      // Jumlah total transaksi
+      omzet: transactions.reduce((t, trx) => t + trx.grandTotal, 0),
+      tax: transactions.reduce((t, trx) => t + (trx.taxAmount || 0), 0),
+      discount: transactions.reduce(
+        (t, trx) => t + (trx.discountAmount || 0),
+        0,
+      ),
       totalTransaction: transactions.length,
     };
 
     res.json({summary, transactions});
   } catch (err) {
-    console.error("Report error:", err);
+    console.error(err);
     res.status(500).json({message: err.message});
   }
 };
@@ -78,24 +89,53 @@ exports.getRecentTransactions = async (req, res) => {
 };
 
 // weekly performance (kasir), menampilkan total penjualan 7 hari terakhir
-exports.getWeeklyPerformance = async (req, res) => {
+exports.getPerformance = async (req, res) => {
   try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    const {range = "week"} = req.query;
 
-    // Ambil total penjualan kasir 7 hari terakhir, dikelompokkan per hari
+    let startDate = new Date();
+    let groupFormat = "%Y-%m-%d";
+
+    // set awal hari ini
+    startDate.setHours(0, 0, 0, 0);
+
+    switch (range) {
+      case "day":
+        // hari ini → group per jam
+        groupFormat = "%H:00";
+        break;
+
+      case "week":
+        startDate.setDate(startDate.getDate() - 6);
+        groupFormat = "%Y-%m-%d";
+        break;
+
+      case "month":
+        startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        groupFormat = "%Y-%m-%d";
+        break;
+
+      case "year":
+        startDate = new Date(startDate.getFullYear(), 0, 1);
+        groupFormat = "%Y-%m";
+        break;
+    }
+
     const data = await Transaction.aggregate([
       {
         $match: {
-          cashier: req.user._id,
           status: "paid",
-          createdAt: {$gte: sevenDaysAgo},
+          cashier: req.user._id,
+          createdAt: {$gte: startDate},
         },
       },
       {
         $group: {
           _id: {
-            $dateToString: {format: "%Y-%m-%d", date: "$createdAt"},
+            $dateToString: {
+              format: groupFormat,
+              date: "$createdAt",
+            },
           },
           amount: {$sum: "$grandTotal"},
         },
@@ -103,9 +143,8 @@ exports.getWeeklyPerformance = async (req, res) => {
       {$sort: {_id: 1}},
     ]);
 
-    // format tanggal jadi MM-DD
     const formatted = data.map((d) => ({
-      day: d._id.slice(5),
+      label: d._id,
       amount: d.amount,
     }));
 

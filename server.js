@@ -18,6 +18,7 @@ app.use(morgan("dev"));
 // routes
 app.use("/api/auth", require("./src/routes/authRoutes"));
 app.use("/api/kasir", require("./src/routes/kasirRoutes"));
+app.use("/api/categories", require("./src/routes/categoryRoutes"));
 app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/transactions", require("./src/routes/transactionRoutes"));
 app.use("/api/dashboard", require("./src/routes/dashboardRoutes"));
