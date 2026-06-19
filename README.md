@@ -1,26 +1,31 @@
-# Ngopi POS Backend
+# Terasa House POS Backend
 
-Backend untuk aplikasi kasir `Ngopi POS` menggunakan **Node.js**, **Express**, dan **MongoDB**.  
-Mendukung autentikasi, manajemen user, upload gambar ke Cloudinary, dan QR code untuk transaksi.
+Backend API untuk aplikasi Point of Sale (POS) **Ngopi POS** yang dibangun menggunakan **Node.js**, **Express.js**, dan **MongoDB**. Sistem ini menyediakan layanan REST API untuk mendukung autentikasi pengguna, manajemen data, upload gambar, serta pembuatan QR Code untuk kebutuhan transaksi.
 
 ## Fitur
 
-- 🔐 Autentikasi Admin & Kasir menggunakan **JWT**
-- 👥 Manajemen pengguna (CRUD)
-- ☁️ Upload gambar ke **Cloudinary**
-- 📷 Generate QR Code untuk transaksi
-- ✅ Validasi request dengan **express-validator**
-- 📜 Logging request dengan **morgan**
-- 🧑‍💻 Seed default admin via script khusus
+- Autentikasi dan otorisasi menggunakan JSON Web Token (JWT)
+- Manajemen pengguna (CRUD)
+- Upload dan pengelolaan gambar menggunakan Cloudinary
+- Pembuatan QR Code untuk transaksi
+- Validasi request menggunakan Express Validator
+- Logging aktivitas request menggunakan Morgan
+- Hashing password menggunakan bcryptjs
+- Konfigurasi environment menggunakan dotenv
+- Seed data administrator untuk inisialisasi sistem
 
-## Teknologi
+## Teknologi yang Digunakan
 
-- **Node.js** & **Express** – Web framework
-- **MongoDB** & **Mongoose** – Database
-- **JWT** – Autentikasi
-- **Cloudinary** – Upload gambar
-- **bcryptjs** – Hash password
-- **multer** – Upload file
-- **qrcode** – Generate QR code
-- **dotenv** – Konfigurasi environment
-- **nodemon** – Auto restart saat development
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JSON Web Token (JWT)
+- Cloudinary
+- bcryptjs
+- Multer
+- QRCode
+- Express Validator
+- Morgan
+- Dotenv
+- Nodemon
